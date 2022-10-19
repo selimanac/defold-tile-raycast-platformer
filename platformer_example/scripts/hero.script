@@ -1,0 +1,404 @@
+local manager = require("platformer_example.scripts.manager")
+local camera = require "orthographic.camera"
+local debugdraw = require "debug-draw.debug-draw"
+
+local CAMERA_ID = hash("/camera")
+
+local MAX_GROUND_SPEED = 120
+local MAX_AIR_SPEED = 80
+-- max fall speed
+local MAX_FALL_SPEED = 500
+
+-- gravity pulling the player down in pixel units
+local GRAVITY = -500
+-- take-off speed when jumping in pixel units
+local JUMP_TAKEOFF_SPEED = 240
+local DOUBLEJUMP_TAKEOFF_SPEED = 100
+-- push-back when shooting
+local RECOIL = 500
+
+local LEFT = hash("left")
+local RIGHT = hash("right")
+local JUMP = hash("jump")
+local FIRE = hash("fire")
+
+local ANIM_WALK = hash("hero_run")
+local ANIM_IDLE = hash("hero_idle")
+local ANIM_JUMP = hash("hero_jump")
+local ANIM_FALL = hash("hero_fall")
+
+local ground_ray_to = vmath.vector3(0, 0, 0)
+local ground_front_ray_to = vmath.vector3(0, 0, 0)
+local ground_front_ray_from = vmath.vector3(0, 0, 0)
+
+local wall_ray_to = vmath.vector3(0, 0, 0)
+local wall_ray_from = vmath.vector3(0, 0, 0)
+local wall_upper_ray_from = vmath.vector3(0, 0, 0)
+local wall_upper_ray_to = vmath.vector3(0, 0, 0)
+
+local ray_from = vmath.vector3(0, 0, 0)
+local ground_ray_from = vmath.vector3(0, 0, 0)
+
+local hero = {url = msg.url("."), sprite = msg.url("#hero_sprite"), sprite_size = vmath.vector3(0, 0, 0)}
+local intersection = vmath.vector3(0, 0, 0)
+local fall_start = vmath.vector3(0, 0, 0)
+local is_on_single = false
+local function play_animation(self, anim)
+    -- only play animations which are not already playing
+    if self.anim ~= anim then
+        -- tell the sprite to play the animation
+        sprite.play_flipbook(hero.sprite, anim)
+        -- remember which animation is playing
+        self.anim = anim
+    end
+end
+
+local function update_animations(self)
+    -- make sure the player character faces the right way
+    sprite.set_hflip(hero.sprite, self.direction == -1)
+
+    -- make sure the right animation is playing
+    if self.ground_contact then
+        if self.velocity.x == 0 then
+            play_animation(self, ANIM_IDLE)
+        else
+            play_animation(self, ANIM_WALK)
+        end
+    else
+        if self.velocity.y > 0 then
+            self.falling = false
+            play_animation(self, ANIM_JUMP)
+        elseif self.falling == false then
+
+            fall_start = go.get_position()
+            fall_start.y = fall_start.y - hero.sprite_size.y / 2
+            self.falling = true
+            play_animation(self, ANIM_FALL)
+        end
+    end
+end
+
+local function clamp(v, min, max)
+    if v < min then
+        return min
+    elseif v > max then
+        return max
+    else
+        return v
+    end
+end
+
+local function decelerate(v, f, dt)
+    local opposing = math.abs(v * f)
+    if v > 0 then
+        return math.floor(math.max(0, v - opposing * dt))
+    elseif v < 0 then
+        return math.ceil(math.min(0, v + opposing * dt))
+    else
+        return 0
+    end
+end
+
+local function jump(self)
+    -- only allow jump from ground
+    -- (extend this with a counter to do things like double-jumps)
+
+    if self.ground_contact then
+        self.double_jump = false
+        -- set take-off speed
+        self.velocity.y = JUMP_TAKEOFF_SPEED
+        -- play animation
+        play_animation(self, ANIM_JUMP)
+        self.ground_contact = false
+        -- compress and stretch player for visual "juice"
+
+        -- allow double jump if still moving up
+    elseif not self.double_jump and self.velocity.y > 0 then
+        self.velocity.y = self.velocity.y + DOUBLEJUMP_TAKEOFF_SPEED
+        self.double_jump = true
+    end
+    -- add some particles 
+    -- particlefx.play("#jump")
+end
+
+local function abort_jump(self)
+    -- cut the jump short if we are still going up
+    if self.velocity.y > 0 then
+        -- scale down the upwards speed
+        self.velocity.y = self.velocity.y * 0.5
+    end
+end
+
+local function walk(self, direction)
+    if direction ~= 0 then
+        self.direction = direction
+    end
+
+    if self.wall_contact == false then
+        if self.ground_contact then
+            self.velocity.x = MAX_GROUND_SPEED * direction
+        else
+            -- move slower in the air
+            self.velocity.x = MAX_AIR_SPEED * direction
+        end
+    end
+end
+
+local function update_ray_postions(self)
+    ray_from = hero.position
+
+    local p = go.get_position()
+
+    ground_ray_from = go.get_position()
+    wall_ray_from = go.get_position()
+    ground_front_ray_from = go.get_position()
+
+    wall_upper_ray_from = go.get_position()
+
+    ground_ray_from.x = ground_ray_from.x
+    ground_ray_from.y = ground_ray_from.y - 10
+    ground_ray_to.x = ground_ray_from.x - (8 * self.direction)
+    ground_ray_to.y = ground_ray_from.y - 7
+
+    ground_front_ray_from.x = ground_front_ray_from.x
+    ground_front_ray_from.y = ground_front_ray_from.y - 10
+    ground_front_ray_to.x = ground_front_ray_from.x + (8 * self.direction)
+    ground_front_ray_to.y = ground_front_ray_from.y - 7
+
+    wall_ray_from.y = wall_ray_from.y - 8
+    wall_ray_to.x = wall_ray_from.x + (17 * self.direction)
+    wall_ray_to.y = wall_ray_from.y
+
+
+    wall_upper_ray_from.y = wall_upper_ray_from.y  +8
+    wall_upper_ray_to.x = wall_upper_ray_from.x + (17 * self.direction)
+    wall_upper_ray_to.y = wall_upper_ray_from.y
+
+end
+-- INIT
+
+function init(self)
+    msg.post(".", "acquire_input_focus")
+
+    hero.url = msg.url(".")
+    hero.sprite = msg.url("#hero_sprite")
+    hero.position = go.get_position()
+
+    hero.sprite_size = go.get(hero.sprite, "size")
+
+    self.spawn_position = hero.position
+    self.velocity = vmath.vector3(0, 0, 0)
+    self.direction = 1
+    self.correction = vmath.vector3()
+    self.ground_contact = true
+    self.previous_ground_contact = true
+    self.anim = nil
+    self.falling = false
+    self.isFront = false
+
+    self.isFromJump = false
+
+end
+
+function update(self, dt)
+    -- apply gravity
+    if self.ground_contact == false then
+
+        self.velocity.y = self.velocity.y + GRAVITY * dt
+        self.velocity.y = clamp(self.velocity.y, -MAX_FALL_SPEED, MAX_FALL_SPEED)
+    end
+
+    -- apply ground or air friction
+    if self.ground_contact then
+        self.velocity.x = decelerate(self.velocity.x, 20, dt)
+        self.velocity.x = clamp(self.velocity.x, -MAX_GROUND_SPEED, MAX_GROUND_SPEED)
+
+    else
+
+        self.velocity.x = decelerate(self.velocity.x, 1, dt)
+        self.velocity.x = clamp(self.velocity.x, -MAX_AIR_SPEED, MAX_AIR_SPEED)
+    end
+
+    -- move player
+    hero.position = hero.position + self.velocity * dt
+    go.set_position(hero.position)
+
+    -- update animations based on state (ground, air, move and idle)
+    update_animations(self)
+
+    -- reset volatile state
+    self.previous_ground_contact = self.ground_contact
+    self.correction = vmath.vector3()
+    -- self.ground_contact = false
+    self.wall_contact = false
+
+    update_ray_postions(self)
+
+    if manager.debug then
+        msg.post("@render:", "draw_line", {start_point = ground_ray_from, end_point = ground_ray_to, color = vmath.vector4(1, 0, 0, 1)})
+        msg.post("@render:", "draw_line", {start_point = wall_ray_from, end_point = wall_ray_to, color = vmath.vector4(1, 0, 0, 1)})
+
+        msg.post("@render:", "draw_line", {start_point = ground_front_ray_from, end_point = ground_front_ray_to, color = vmath.vector4(1, 0, 0, 1)})
+
+        msg.post("@render:", "draw_line", {start_point = wall_upper_ray_from, end_point = wall_upper_ray_to, color = vmath.vector4(1, 0, 0, 1)})
+    end
+
+    -- Front Ground collision
+    local front_hit, tile_x, tile_y, array_id, tile_id, intersection_x, intersection_y, side = raycast.cast(ground_front_ray_from, ground_front_ray_to)
+
+    if front_hit then
+        intersection.x = intersection_x
+        intersection.y = intersection_y
+
+        if tile_id == 41 and self.falling and side == 1 and (fall_start.y) > (16 * tile_y + 3) then
+
+            is_on_single = true
+            self.falling = false
+            self.ground_contact = true
+            self.isFront = true
+            self.velocity.y = 0
+            self.velocity.x = 0
+            hero.position.y = 16 * tile_y + hero.sprite_size.y / 2
+
+            msg.post("@render:", "draw_line", {start_point = ground_front_ray_from, end_point = ground_front_ray_to, color = vmath.vector4(1, 0, 0, 1)})
+            msg.post("@render:", "draw_line", {start_point = ground_front_ray_from, end_point = intersection, color = vmath.vector4(1, 1, 0, 1)})
+            debugdraw.circle(intersection.x, intersection.y, 15, debugdraw.COLORS.green)
+        end
+
+        if tile_id == 195 and side == 1 and self.ground_contact == false then
+            is_on_single = false
+            self.falling = false
+            self.ground_contact = true
+            self.isFront = true
+            self.velocity.y = 0
+            hero.position.y = 16 * tile_y + hero.sprite_size.y / 2
+            msg.post("@render:", "draw_line", {start_point = ground_front_ray_from, end_point = ground_front_ray_to, color = vmath.vector4(1, 0, 0, 1)})
+            msg.post("@render:", "draw_line", {start_point = ground_front_ray_from, end_point = intersection, color = vmath.vector4(1, 1, 0, 1)})
+            debugdraw.circle(intersection.x, intersection.y, 5, debugdraw.COLORS.green)
+        end
+
+    else
+        -- self.ground_contact = false
+        self.isFront = false
+
+    end
+
+    if self.isFront == false then
+
+        -- Ground collision
+        local back_hit, tile_x, tile_y, array_id, tile_id, intersection_x, intersection_y, side = raycast.cast(ground_ray_from, ground_ray_to)
+
+        if back_hit then
+            intersection.x = intersection_x
+            intersection.y = intersection_y
+
+            if tile_id == 41 and self.falling and side == 1 and (fall_start.y) > (16 * tile_y + 3) then
+
+                is_on_single = true
+
+                self.falling = false
+                self.ground_contact = true
+                self.isFront = true
+                self.velocity.y = 0
+                self.velocity.x = 0
+                hero.position.y = 16 * tile_y + hero.sprite_size.y / 2
+
+                msg.post("@render:", "draw_line", {start_point = ground_front_ray_from, end_point = ground_front_ray_to, color = vmath.vector4(1, 0, 0, 1)})
+                msg.post("@render:", "draw_line", {start_point = ground_front_ray_from, end_point = intersection, color = vmath.vector4(1, 1, 0, 1)})
+                debugdraw.circle(intersection.x, intersection.y, 15, debugdraw.COLORS.green)
+            end
+
+            if tile_id == 195 and side == 1 and self.ground_contact == false then
+                is_on_single = false
+                self.falling = false
+                self.ground_contact = true
+                self.velocity.y = 0
+                hero.position.y = 16 * tile_y + hero.sprite_size.y / 2
+                msg.post("@render:", "draw_line", {start_point = ground_ray_from, end_point = ground_ray_to, color = vmath.vector4(1, 0, 0, 1)})
+                msg.post("@render:", "draw_line", {start_point = ground_ray_from, end_point = intersection, color = vmath.vector4(1, 1, 0, 1)})
+                debugdraw.circle(intersection.x, intersection.y, 5, debugdraw.COLORS.green)
+            end
+
+        else
+
+            self.ground_contact = false
+
+        end
+    end
+
+    -- Wall collision
+    local wall_hit, tile_x, tile_y, array_id, tile_id, intersection_x, intersection_y, side = raycast.cast(wall_ray_from, wall_ray_to)
+
+    if wall_hit then
+        intersection.x = intersection_x
+        intersection.y = intersection_y
+     
+        if tile_id == 41 and side == 0 then
+
+            self.wall_contact = true
+            --  self.velocity.x = 0
+            local wall_hit, tile_x, tile_y, array_id, stile_id, intersection_x, intersection_y, side = raycast.cast(wall_upper_ray_from, wall_upper_ray_to)
+            
+            if wall_hit then
+                print(stile_id)
+                if stile_id == 195 and side == 0 then
+                    self.velocity.x = 0
+                   
+                   
+                end
+            end
+            msg.post("@render:", "draw_line", {start_point = wall_upper_ray_from, end_point = wall_upper_ray_to, color = vmath.vector4(1, 0, 0, 1)})
+            msg.post("@render:", "draw_line", {start_point = wall_upper_ray_from, end_point = intersection, color = vmath.vector4(1, 1, 0, 1)})
+            debugdraw.circle(intersection.x, intersection.y, 5, debugdraw.COLORS.green)
+
+        end
+        if tile_id == 195 and side == 0 then
+            self.wall_contact = true
+            self.velocity.x = 0
+
+            if self.direction == -1 then
+
+                hero.position.x = (16 * tile_x) + hero.sprite_size.x / 2
+
+            elseif self.direction == 1 then
+
+                hero.position.x = (16 * (tile_x - 1)) - hero.sprite_size.x / 2
+            end
+
+            msg.post("@render:", "draw_line", {start_point = wall_ray_from, end_point = wall_ray_to, color = vmath.vector4(1, 0, 0, 1)})
+            msg.post("@render:", "draw_line", {start_point = wall_ray_from, end_point = intersection, color = vmath.vector4(1, 1, 0, 1)})
+            debugdraw.circle(intersection.x, intersection.y, 5, debugdraw.COLORS.green)
+        end
+
+    else
+        self.wall_contact = false
+    end
+
+end
+
+function on_message(self, message_id, message, sender)
+    -- Add message-handling code here
+    -- Learn more: https://defold.com/manuals/message-passing/
+    -- Remove this function if not needed
+end
+
+function on_input(self, action_id, action)
+
+    if action_id == LEFT then
+        walk(self, -action.value)
+    elseif action_id == RIGHT then
+        walk(self, action.value)
+    elseif action_id == JUMP then
+        if action.pressed then
+
+            jump(self)
+        elseif action.released then
+            abort_jump(self)
+        end
+    elseif action_id == FIRE then
+        if action.released then
+            fire(self)
+        end
+    end
+
+end
