@@ -57,7 +57,7 @@ instances {
   prototype: "/metrics/fps.go"
   position {
     x: 33.0
-    y: 39.0
+    y: 60.0
     z: 0.0
   }
   rotation {
@@ -84,8 +84,8 @@ instances {
   id: "hero"
   prototype: "/platformer_example/hero.go"
   position {
-    x: 221.0
-    y: 65.0
+    x: 61.0
+    y: 140.0
     z: 0.1
   }
   rotation {

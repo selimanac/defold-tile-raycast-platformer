@@ -1,4 +1,4 @@
-
+local manager = require("platformer_example.scripts.libs.manager")
 local hero = require("platformer_example.scripts.libs.hero")
 
 function init(self)
@@ -9,14 +9,16 @@ end
 function update(self, dt)
     hero.update(self, dt)
 
+    if manager.debug then
+        msg.post("@render:", "draw_debug_text", {text = profiler.get_cpu_usage(), position = vmath.vector3(33, 40, 0), color = vmath.vector4(1, 1, 1, 1)})
+        msg.post("@render:", "draw_debug_text", {text = profiler.get_memory_usage(), position = vmath.vector3(33, 20, 0), color = vmath.vector4(1, 1, 1, 1)})
+    end
 end
 
 function on_message(self, message_id, message, sender)
-  
+
 end
 
 function on_input(self, action_id, action)
     hero.input(self, action_id, action)
-    
-
 end

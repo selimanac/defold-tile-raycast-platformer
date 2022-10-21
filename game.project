@@ -26,7 +26,7 @@ default_texture_mag_filter = nearest
 max_debug_vertices = 100000
 
 [sprite]
-subpixels = 0
+subpixels = 1
 
 [tilemap]
 max_tile_count = 4096

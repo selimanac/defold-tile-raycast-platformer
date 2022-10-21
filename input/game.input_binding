@@ -8,11 +8,11 @@ key_trigger {
 }
 key_trigger {
   input: KEY_W
-  action: "up"
+  action: "jump"
 }
 key_trigger {
   input: KEY_UP
-  action: "up"
+  action: "jump"
 }
 key_trigger {
   input: KEY_D

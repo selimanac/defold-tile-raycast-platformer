@@ -1919,7 +1919,7 @@ layers {
 layers {
   id: "targets"
   z: 0.1
-  is_visible: 1
+  is_visible: 0
   cell {
     x: 0
     y: 0
