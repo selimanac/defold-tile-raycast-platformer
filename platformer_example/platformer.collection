@@ -84,8 +84,8 @@ instances {
   id: "hero"
   prototype: "/platformer_example/hero.go"
   position {
-    x: 68.0
-    y: 127.0
+    x: 221.0
+    y: 65.0
     z: 0.1
   }
   rotation {
