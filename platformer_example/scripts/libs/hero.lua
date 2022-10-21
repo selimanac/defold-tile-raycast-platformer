@@ -203,7 +203,7 @@ function hero.update(self, dt)
     end
 
     -- FRONT RAY 
-    ray_hit, ray_tile_x, ray_tile_y, ray_array_id, ray_tile_id, ray_intersection_x, ray_intersection_y, ray_side = raycast.cast(hero.position, rays[2].to)
+    ray_hit, ray_tile_x, ray_tile_y, ray_array_id, ray_tile_id, ray_intersection_x, ray_intersection_y, ray_side = raycast.cast(rays[2].from, rays[2].to)
     if ray_hit then
         check_ground()
     else
@@ -211,7 +211,7 @@ function hero.update(self, dt)
     end
 
     -- BACK RAY 
-    ray_hit, ray_tile_x, ray_tile_y, ray_array_id, ray_tile_id, ray_intersection_x, ray_intersection_y, ray_side = raycast.cast(hero.position, rays[1].to)
+    ray_hit, ray_tile_x, ray_tile_y, ray_array_id, ray_tile_id, ray_intersection_x, ray_intersection_y, ray_side = raycast.cast(rays[1].from, rays[1].to)
     if ray_hit then
         check_ground()
     else
@@ -231,7 +231,7 @@ function hero.update(self, dt)
     --------------------
 
     -- WALL RAY 
-    ray_hit, ray_tile_x, ray_tile_y, ray_array_id, ray_tile_id, ray_intersection_x, ray_intersection_y, ray_side = raycast.cast(hero.position, rays[3].to)
+    ray_hit, ray_tile_x, ray_tile_y, ray_array_id, ray_tile_id, ray_intersection_x, ray_intersection_y, ray_side = raycast.cast( rays[3].from, rays[3].to)
     if ray_hit then
         ray_intersection.x = ray_intersection_x
         ray_intersection.y = ray_intersection_y
@@ -324,7 +324,9 @@ function hero.init()
     hero.velocity = vmath.vector3(0, 0, 0)
 
     fsm_init()
+    update_rays()
     hero.fsm:idle()
+   
 
 end
 

@@ -86,6 +86,166 @@ instances {
   position {
     x: 61.0
     y: 140.0
+    z: 0.3
+  }
+  rotation {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+    w: 1.0
+  }
+  scale3 {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+}
+instances {
+  id: "saw"
+  prototype: "/platformer_example/saw.go"
+  position {
+    x: 335.0
+    y: 143.0
+    z: 0.2
+  }
+  rotation {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+    w: 1.0
+  }
+  scale3 {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+}
+instances {
+  id: "apple"
+  prototype: "/platformer_example/apple.go"
+  position {
+    x: 215.0
+    y: 177.0
+    z: 0.1
+  }
+  rotation {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+    w: 1.0
+  }
+  scale3 {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+}
+instances {
+  id: "apple1"
+  prototype: "/platformer_example/apple.go"
+  position {
+    x: 328.0
+    y: 177.0
+    z: 0.1
+  }
+  rotation {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+    w: 1.0
+  }
+  scale3 {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+}
+instances {
+  id: "apple2"
+  prototype: "/platformer_example/apple.go"
+  position {
+    x: 290.0
+    y: 177.0
+    z: 0.1
+  }
+  rotation {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+    w: 1.0
+  }
+  scale3 {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+}
+instances {
+  id: "apple3"
+  prototype: "/platformer_example/apple.go"
+  position {
+    x: 253.0
+    y: 177.0
+    z: 0.1
+  }
+  rotation {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+    w: 1.0
+  }
+  scale3 {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+}
+instances {
+  id: "apple5"
+  prototype: "/platformer_example/apple.go"
+  position {
+    x: 307.0
+    y: 198.0
+    z: 0.1
+  }
+  rotation {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+    w: 1.0
+  }
+  scale3 {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+}
+instances {
+  id: "apple6"
+  prototype: "/platformer_example/apple.go"
+  position {
+    x: 270.0
+    y: 198.0
+    z: 0.1
+  }
+  rotation {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+    w: 1.0
+  }
+  scale3 {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+}
+instances {
+  id: "apple7"
+  prototype: "/platformer_example/apple.go"
+  position {
+    x: 231.0
+    y: 198.0
     z: 0.1
   }
   rotation {
@@ -818,6 +978,33 @@ embedded_instances {
   "  }\n"
   "}\n"
   ""
+  position {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  rotation {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+    w: 1.0
+  }
+  scale3 {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+}
+embedded_instances {
+  id: "apples"
+  children: "apple"
+  children: "apple1"
+  children: "apple2"
+  children: "apple3"
+  children: "apple5"
+  children: "apple6"
+  children: "apple7"
+  data: ""
   position {
     x: 0.0
     y: 0.0

@@ -130,6 +130,120 @@ animations {
   flip_horizontal: 0
   flip_vertical: 0
 }
+animations {
+  id: "saw"
+  images {
+    image: "/platformer_example/assets/Traps/Saw/tile000.png"
+    sprite_trim_mode: SPRITE_TRIM_MODE_OFF
+  }
+  images {
+    image: "/platformer_example/assets/Traps/Saw/tile001.png"
+    sprite_trim_mode: SPRITE_TRIM_MODE_OFF
+  }
+  images {
+    image: "/platformer_example/assets/Traps/Saw/tile002.png"
+    sprite_trim_mode: SPRITE_TRIM_MODE_OFF
+  }
+  images {
+    image: "/platformer_example/assets/Traps/Saw/tile003.png"
+    sprite_trim_mode: SPRITE_TRIM_MODE_OFF
+  }
+  images {
+    image: "/platformer_example/assets/Traps/Saw/tile004.png"
+    sprite_trim_mode: SPRITE_TRIM_MODE_OFF
+  }
+  images {
+    image: "/platformer_example/assets/Traps/Saw/tile005.png"
+    sprite_trim_mode: SPRITE_TRIM_MODE_OFF
+  }
+  images {
+    image: "/platformer_example/assets/Traps/Saw/tile006.png"
+    sprite_trim_mode: SPRITE_TRIM_MODE_OFF
+  }
+  images {
+    image: "/platformer_example/assets/Traps/Saw/tile007.png"
+    sprite_trim_mode: SPRITE_TRIM_MODE_OFF
+  }
+  playback: PLAYBACK_LOOP_FORWARD
+  fps: 20
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "apple"
+  images {
+    image: "/platformer_example/assets/Items/Fruits/apple/tile000.png"
+    sprite_trim_mode: SPRITE_TRIM_MODE_OFF
+  }
+  images {
+    image: "/platformer_example/assets/Items/Fruits/apple/tile001.png"
+    sprite_trim_mode: SPRITE_TRIM_MODE_OFF
+  }
+  images {
+    image: "/platformer_example/assets/Items/Fruits/apple/tile002.png"
+    sprite_trim_mode: SPRITE_TRIM_MODE_OFF
+  }
+  images {
+    image: "/platformer_example/assets/Items/Fruits/apple/tile003.png"
+    sprite_trim_mode: SPRITE_TRIM_MODE_OFF
+  }
+  images {
+    image: "/platformer_example/assets/Items/Fruits/apple/tile004.png"
+    sprite_trim_mode: SPRITE_TRIM_MODE_OFF
+  }
+  images {
+    image: "/platformer_example/assets/Items/Fruits/apple/tile005.png"
+    sprite_trim_mode: SPRITE_TRIM_MODE_OFF
+  }
+  images {
+    image: "/platformer_example/assets/Items/Fruits/apple/tile006.png"
+    sprite_trim_mode: SPRITE_TRIM_MODE_OFF
+  }
+  images {
+    image: "/platformer_example/assets/Items/Fruits/apple/tile007.png"
+    sprite_trim_mode: SPRITE_TRIM_MODE_OFF
+  }
+  images {
+    image: "/platformer_example/assets/Items/Fruits/apple/tile008.png"
+    sprite_trim_mode: SPRITE_TRIM_MODE_OFF
+  }
+  images {
+    image: "/platformer_example/assets/Items/Fruits/apple/tile009.png"
+    sprite_trim_mode: SPRITE_TRIM_MODE_OFF
+  }
+  images {
+    image: "/platformer_example/assets/Items/Fruits/apple/tile010.png"
+    sprite_trim_mode: SPRITE_TRIM_MODE_OFF
+  }
+  images {
+    image: "/platformer_example/assets/Items/Fruits/apple/tile011.png"
+    sprite_trim_mode: SPRITE_TRIM_MODE_OFF
+  }
+  images {
+    image: "/platformer_example/assets/Items/Fruits/apple/tile012.png"
+    sprite_trim_mode: SPRITE_TRIM_MODE_OFF
+  }
+  images {
+    image: "/platformer_example/assets/Items/Fruits/apple/tile013.png"
+    sprite_trim_mode: SPRITE_TRIM_MODE_OFF
+  }
+  images {
+    image: "/platformer_example/assets/Items/Fruits/apple/tile014.png"
+    sprite_trim_mode: SPRITE_TRIM_MODE_OFF
+  }
+  images {
+    image: "/platformer_example/assets/Items/Fruits/apple/tile015.png"
+    sprite_trim_mode: SPRITE_TRIM_MODE_OFF
+  }
+  images {
+    image: "/platformer_example/assets/Items/Fruits/apple/tile016.png"
+    sprite_trim_mode: SPRITE_TRIM_MODE_OFF
+  }
+  playback: PLAYBACK_LOOP_FORWARD
+  fps: 20
+  flip_horizontal: 0
+  flip_vertical: 0
+}
 margin: 0
 extrude_borders: 2
 inner_padding: 0

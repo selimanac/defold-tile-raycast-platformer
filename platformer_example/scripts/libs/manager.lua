@@ -8,7 +8,7 @@ manager.directions = {LEFT = vmath.vector3(-1, 0, 0), RIGHT = vmath.vector3(1, 0
 
 -- 195 for platforms
 -- 41 for one-way platform 
-manager.tile = {WALL = 195, FLOAT = 41}
+manager.tile = {WALL = 195, FLOAT = 41, PLATFORM = 197}
 
 manager.tile_size = {w = 16, h = 16}
 
