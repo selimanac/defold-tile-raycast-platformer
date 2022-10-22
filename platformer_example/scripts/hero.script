@@ -16,7 +16,10 @@ function update(self, dt)
 end
 
 function on_message(self, message_id, message, sender)
-
+    pprint(message_id)
+    if message_id == hash("set_aabb") then
+      hero.aabb_id = aabb.insert_gameobject(manager.collision_group, hero.url, hero.size.w, hero.size.h)
+    end
 end
 
 function on_input(self, action_id, action)

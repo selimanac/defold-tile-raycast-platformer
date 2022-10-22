@@ -104,8 +104,8 @@ instances {
   id: "saw"
   prototype: "/platformer_example/saw.go"
   position {
-    x: 335.0
-    y: 143.0
+    x: 208.0
+    y: 128.0
     z: 0.2
   }
   rotation {
@@ -121,7 +121,7 @@ instances {
   }
 }
 instances {
-  id: "apple"
+  id: "apple1"
   prototype: "/platformer_example/apple.go"
   position {
     x: 215.0
@@ -141,7 +141,7 @@ instances {
   }
 }
 instances {
-  id: "apple1"
+  id: "apple2"
   prototype: "/platformer_example/apple.go"
   position {
     x: 328.0
@@ -161,7 +161,7 @@ instances {
   }
 }
 instances {
-  id: "apple2"
+  id: "apple3"
   prototype: "/platformer_example/apple.go"
   position {
     x: 290.0
@@ -181,7 +181,7 @@ instances {
   }
 }
 instances {
-  id: "apple3"
+  id: "apple4"
   prototype: "/platformer_example/apple.go"
   position {
     x: 253.0
@@ -997,10 +997,10 @@ embedded_instances {
 }
 embedded_instances {
   id: "apples"
-  children: "apple"
   children: "apple1"
   children: "apple2"
   children: "apple3"
+  children: "apple4"
   children: "apple5"
   children: "apple6"
   children: "apple7"

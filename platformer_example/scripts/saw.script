@@ -1,0 +1,47 @@
+local manager = require("platformer_example.scripts.libs.manager")
+local utils = require("platformer_example.scripts.libs.utils")
+
+local function on_saw_move_complete(self, url, property)
+    self.corner = self.corner + 1
+    self.corner = self.corner == 5 and 1 or self.corner
+
+    local target_position = manager.floating_platforms[self.corner]
+    self.position = go.get_position(self.url)
+
+    local distance = math.sqrt(math.pow((target_position.x - self.position.x), 2) + math.pow((target_position.y - self.position.y), 2))
+    local speed = distance / 50
+
+    go.animate(self.url, "position", go.PLAYBACK_ONCE_FORWARD, target_position, go.EASING_LINEAR, speed, 0, on_saw_move_complete)
+end
+
+function init(self)
+    self.url = msg.url(".")
+    self.corner = 1
+    self.position = go.get_position()
+
+  --  manager.add_saw(self.url)
+	manager.add_url("saw", self.url)
+
+	self.size_w = 34 
+	self.size_h = 34
+
+end
+
+--! Remove this
+function update(self, dt)
+	if manager.debug then
+		utils.draw_rect(go.get_position(self.url), self.size_w, self.size_h)
+	end
+  
+end
+
+function on_message(self, message_id, message, sender)
+
+    if message_id == hash("start_anim") then
+        go.set_position(manager.floating_platforms[self.corner], self.url)
+        on_saw_move_complete(self, self.url, nil)
+
+      self.aabb_id =   aabb.insert_gameobject(manager.collision_group, self.url, self.size_w, self.size_h)
+	  manager.add_saw(self.aabb_id, self.url)
+    end
+end

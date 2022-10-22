@@ -29,7 +29,7 @@ local JUMP_TAKEOFF_SPEED = 240
 hero.fsm = {}
 hero.move = {LEFT = hash("left"), RIGHT = hash("right"), JUMP = hash("jump")}
 
-hero.anim = {WALK = hash("hero_run"), IDLE = hash("hero_idle"), JUMP = hash("hero_jump"), FALL = hash("hero_fall")}
+hero.anim = {WALK = hash("hero_run"), IDLE = hash("hero_idle"), JUMP = hash("hero_jump"), FALL = hash("hero_fall"), DIE = hash("hero_die")}
 
 local ray_count = 4
 local rays = {
@@ -72,6 +72,27 @@ local function update_rays()
 
 end
 
+local function update_onair_move()
+    if (hero.fsm:is("jumping") or hero.fsm:is("falling")) and wall_contact == false then
+        hero.velocity.x = MAX_AIR_SPEED * hero.direction
+    end
+end
+
+local function hero_die_complete()
+    go.set_position(hero.initial_position, hero.url)
+    go.set(hero.sprite, "tint.w", 1)
+    hero.fsm:idle()
+end
+
+
+local function set_direction(direction)
+    hero.direction = direction
+    sprite.set_hflip(hero.sprite, hero.direction == -1)
+end
+
+--------------------
+--- CALLBACKS
+--------------------
 local function on_enter_falling(self, event, from, to, msg)
     fall_start_position = go.get_position()
     fall_start_position.y = fall_start_position.y - hero.sprite_bound.y
@@ -99,17 +120,19 @@ local function on_enter_walking(self, event, from, to, msg)
     sprite.play_flipbook(hero.sprite, hero.anim.WALK)
 end
 
-local function update_onair_move()
-    if (hero.fsm:is("jumping") or hero.fsm:is("falling")) and wall_contact == false then
-        hero.velocity.x = MAX_AIR_SPEED * hero.direction
-    end
+local function on_leave_dying()
+    hero.reset()
 end
 
-local function set_direction(direction)
-    hero.direction = direction
-    sprite.set_hflip(hero.sprite, hero.direction == -1)
+local function on_enter_dying(self, event, from, to, msg)
+    sprite.play_flipbook(hero.sprite, hero.anim.DIE)
+    go.animate(hero.url, "position.y", go.PLAYBACK_ONCE_FORWARD, hero.position.y + 150, go.EASING_LINEAR, 0.5, 0.3)
+    go.animate(hero.sprite, "tint.w", go.PLAYBACK_ONCE_FORWARD, 0, go.EASING_LINEAR, 0.4, 0.5, hero_die_complete)
 end
 
+--------------------
+--- FSM
+--------------------
 local function fsm_init()
 
     hero.fsm = fsm.create({
@@ -117,20 +140,40 @@ local function fsm_init()
         -- LuaFormatter off
             events = {    
                 {name = "init", from = "*", to = "setting"},
-                {name = "idle", from = {"init","walking", "falling"}, to = "standing"},
+                {name = "idle", from = {"dying", "init","walking", "falling"}, to = "standing"},
                 {name = "walk", from = {"standing","falling"}, to = "walking"},
                 {name = "jump", from = {"standing", "walking"}, to = "jumping"},
                 {name = "fall", from = {"standing","walking","jumping"}, to = "falling"},
+                {name = "die", from = "*", to = "dying"},
             },
             callbacks = {
                 on_enter_standing = on_enter_standing,
                 on_enter_walking = on_enter_walking,
                 on_enter_jumping = on_enter_jumping,
                 on_leave_jumping = on_leave_jumping,
-                on_enter_falling = on_enter_falling
+                on_enter_falling = on_enter_falling,
+                on_enter_dying = on_enter_dying,
+                on_leave_dying = on_leave_dying,
             }
             -- LuaFormatter on
     })
+end
+
+local function check_collisions()
+    local result, count = aabb.query_id(manager.collision_group, hero.aabb_id)
+    if result then
+        for i = 1, count do
+
+            if manager.saws[result[i]] and hero.fsm:is("dying") == false then
+                hero.fsm:die()
+            end
+            if manager.apples[result[i]] and manager.apples[result[i]].active then
+
+                manager.apples[result[i]].active = false
+                msg.post(manager.apples[result[i]].url, "que_for_delete")
+            end
+        end
+    end
 end
 
 local function check_ground()
@@ -163,6 +206,12 @@ local function check_ground()
         -- hero.position.x = manager.tile_size.w * ray_tile_x + hero.sprite_bound.x
     end
 
+    if ray_tile_id == manager.tile.PLATFORM and hero.fsm:is("falling") and ray_side == 1 and (fall_start_position.y) > (manager.tile_size.h * ray_tile_y + platform_top_offset) and ground_check.FRONT == false then
+        ground_check.FRONT = true
+        hero.position.y = manager.tile_size.h * ray_tile_y + hero.sprite_bound.y
+        hero.fsm:idle()
+    end
+
     if manager.debug then
         utils.draw_hit_point(ray_intersection)
     end
@@ -172,6 +221,10 @@ end
 --- UPDATE
 --------------------
 function hero.update(self, dt)
+
+    if hero.fsm:is("dying") then
+        return
+    end
 
     -- Walk
     if hero.fsm:is("walking") and wall_contact == false then
@@ -231,12 +284,12 @@ function hero.update(self, dt)
     --------------------
 
     -- WALL RAY 
-    ray_hit, ray_tile_x, ray_tile_y, ray_array_id, ray_tile_id, ray_intersection_x, ray_intersection_y, ray_side = raycast.cast( rays[3].from, rays[3].to)
+    ray_hit, ray_tile_x, ray_tile_y, ray_array_id, ray_tile_id, ray_intersection_x, ray_intersection_y, ray_side = raycast.cast(rays[3].from, rays[3].to)
     if ray_hit then
         ray_intersection.x = ray_intersection_x
         ray_intersection.y = ray_intersection_y
 
-        if ray_tile_id == manager.tile.WALL and ray_side == 0 then
+        if ray_tile_id == manager.tile.WALL then
             hero.position.x = (manager.tile_size.w * (ray_tile_x - (hero.direction == -1 and 0 or 1))) - hero.sprite_bound.x * hero.direction
             wall_contact = true
         end
@@ -271,8 +324,18 @@ function hero.update(self, dt)
     -- Set the new possition
     go.set_position(hero.position)
 
+    -- Check collisions
+    check_collisions()
+
+    if manager.debug then
+        utils.draw_rect(hero.position, hero.size.w, hero.size.h)
+    end
+
 end
 
+--------------------
+--- INPUT
+--------------------
 function hero.input(self, action_id, action)
 
     if action_id == hero.move.LEFT then
@@ -313,20 +376,31 @@ function hero.input(self, action_id, action)
 
 end
 
+function hero.reset()
+    hero.direction = 1
+    set_direction(hero.direction)
+    hero.velocity = vmath.vector3(0, 0, 0)
+    hero.position = go.get_position(hero.url)
+end
+
 function hero.init()
 
     hero.url = msg.url(".")
     hero.sprite = msg.url("#hero_sprite")
     hero.position = go.get_position(hero.url)
+    hero.initial_position = go.get_position(hero.url)
     hero.sprite_size = go.get(hero.sprite, "size")
     hero.sprite_bound = go.get(hero.sprite, "size") / 2
     hero.direction = 1
     hero.velocity = vmath.vector3(0, 0, 0)
 
+    hero.size = {w = 18, h = 26}
+
     fsm_init()
     update_rays()
     hero.fsm:idle()
-   
+
+    manager.add_url("hero", hero.url)
 
 end
 

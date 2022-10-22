@@ -2,8 +2,8 @@ local manager = require("platformer_example.scripts.libs.manager")
 
 function init(self)
     msg.post("@render:", "clear_color", {color = vmath.vector4(33 / 255.0, 31 / 255.0, 48 / 255.0, 0)})
-
-    manager.debug = true
+    
+    manager.debug = true -- Turn this true/false for debug draws
     manager.init()
 end
 
