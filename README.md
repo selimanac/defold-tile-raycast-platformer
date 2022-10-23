@@ -1,3 +1,6 @@
+![Tile Raycast](/assets/tile_raycast_2400x666.png)
+
+
 This is an example platformer project for [Defold Tile Raycast](https://github.com/selimanac/defold-tile-raycast) native extension.
 
 Also it use [DAABBCC](https://github.com/selimanac/DAABBCC) for collisions.
@@ -5,4 +8,8 @@ Also it use [DAABBCC](https://github.com/selimanac/DAABBCC) for collisions.
 Art By: [Pixel Frog](https://pixelfrog-assets.itch.io/)  
 https://pixelfrog-assets.itch.io/pixel-adventure-1
 
-Play the example here: https://selimanac.github.io/defold-tile-raycast-platformer/
+Play the example here: https://selimanac.github.io/defold-tile-raycast-platformer/  
+
+
+
+![Tile Raycast](/assets/screen.png)
