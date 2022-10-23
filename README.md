@@ -2,4 +2,4 @@ This is an example platformer project for [Defold Tile Raycast](https://github.c
 
 Also it use [DAABBCC](https://github.com/selimanac/DAABBCC) for collisions.
 
-Play the example here: 
+Play the example here: https://selimanac.github.io/defold-tile-raycast-platformer/
