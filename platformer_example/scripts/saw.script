@@ -19,20 +19,20 @@ function init(self)
     self.corner = 1
     self.position = go.get_position()
 
-  --  manager.add_saw(self.url)
-	manager.add_url("saw", self.url)
+    --  manager.add_saw(self.url)
+    manager.add_url("saw", self.url)
 
-	self.size_w = 34 
-	self.size_h = 34
+    self.size_w = 34
+    self.size_h = 34
 
 end
 
---! Remove this
+-- ! Remove this
 function update(self, dt)
-	if manager.debug then
-		utils.draw_rect(go.get_position(self.url), self.size_w, self.size_h)
-	end
-  
+    if manager.debug then
+        utils.draw_rect(go.get_position(self.url), self.size_w, self.size_h)
+    end
+
 end
 
 function on_message(self, message_id, message, sender)
@@ -41,7 +41,7 @@ function on_message(self, message_id, message, sender)
         go.set_position(manager.floating_platforms[self.corner], self.url)
         on_saw_move_complete(self, self.url, nil)
 
-      self.aabb_id =   aabb.insert_gameobject(manager.collision_group, self.url, self.size_w, self.size_h)
-	  manager.add_saw(self.aabb_id, self.url)
+        self.aabb_id = aabb.insert_gameobject(manager.collision_group, self.url, self.size_w, self.size_h)
+        manager.add_saw(self.aabb_id, self.url)
     end
 end

@@ -18,6 +18,7 @@ local ground_check = {FRONT = true, BACK = true}
 local wall_contact = false
 local oneside_platform_contact = false
 local fall_start_position = vmath.vector3()
+local current_bottom_position = vmath.vector3()
 local platform_top_offset = 0
 
 local MAX_GROUND_SPEED = 120
@@ -26,12 +27,15 @@ local MAX_FALL_SPEED = 500
 local GRAVITY = -500
 local JUMP_TAKEOFF_SPEED = 240
 
+local tile_size_y = 0
+local tile_size_x = 0
+
 hero.fsm = {}
 hero.move = {LEFT = hash("left"), RIGHT = hash("right"), JUMP = hash("jump")}
 
 hero.anim = {WALK = hash("hero_run"), IDLE = hash("hero_idle"), JUMP = hash("hero_jump"), FALL = hash("hero_fall"), DIE = hash("hero_die")}
 
-local ray_count = 4
+local ray_count = 7
 local rays = {
     [1] = { -- back
         from = vmath.vector3(0, 0, 0),
@@ -48,14 +52,32 @@ local rays = {
     [3] = { -- wall
         from = vmath.vector3(0, 0, 0),
         to = vmath.vector3(0, 0, 0),
-        offset = vmath.vector3(17, -8, 0),
-        offset_from = vmath.vector3(0, 0, 0)
+        offset = vmath.vector3(17, -10, 0),
+        offset_from = vmath.vector3(0, -10, 0)
     },
-    [4] = { -- forward
+    [4] = { -- forward. since raycast returns only first tile, extra check for forwarding tile.
         from = vmath.vector3(0, 0, 0),
         to = vmath.vector3(0, 0, 0),
-        offset = vmath.vector3(17, 10, 0),
+        offset = vmath.vector3(15, 10, 0),
         offset_from = vmath.vector3(0, 10, 0)
+    },
+    [5] = { -- top Center
+        from = vmath.vector3(0, 0, 0),
+        to = vmath.vector3(0, 0, 0),
+        offset = vmath.vector3(0, 15, 0),
+        offset_from = vmath.vector3(0, 0, 0)
+    },
+    [6] = { -- top left
+        from = vmath.vector3(0, 0, 0),
+        to = vmath.vector3(0, 0, 0),
+        offset = vmath.vector3(7, 15, 0),
+        offset_from = vmath.vector3(0, 0, 0)
+    },
+    [7] = { -- top right
+        from = vmath.vector3(0, 0, 0),
+        to = vmath.vector3(0, 0, 0),
+        offset = vmath.vector3(-7, 15, 0),
+        offset_from = vmath.vector3(0, 0, 0)
     }
 }
 
@@ -63,11 +85,11 @@ local function update_rays()
 
     for i = 1, ray_count do
         ray = rays[i]
-
-        ray.from.x = hero.position.x + ray.offset_from.x
-        ray.from.y = hero.position.y + ray.offset_from.y
-        ray.to.x = hero.position.x + (ray.offset.x * hero.direction)
-        ray.to.y = hero.position.y + ray.offset.y
+        local p = go.get_position(hero.url)
+        ray.from.x = p.x + ray.offset_from.x
+        ray.from.y = p.y + ray.offset_from.y
+        ray.to.x = p.x + (ray.offset.x * hero.direction)
+        ray.to.y = p.y + ray.offset.y
     end
 
 end
@@ -84,7 +106,6 @@ local function hero_die_complete()
     hero.fsm:idle()
 end
 
-
 local function set_direction(direction)
     hero.direction = direction
     sprite.set_hflip(hero.sprite, hero.direction == -1)
@@ -95,7 +116,7 @@ end
 --------------------
 local function on_enter_falling(self, event, from, to, msg)
     fall_start_position = go.get_position()
-    fall_start_position.y = fall_start_position.y - hero.sprite_bound.y
+    fall_start_position.y = (fall_start_position.y - hero.sprite_bound.y) + platform_top_offset
     sprite.play_flipbook(hero.sprite, hero.anim.FALL)
 end
 
@@ -112,6 +133,7 @@ end
 
 local function on_enter_standing(self, event, from, to, msg)
     hero.velocity.y = 0
+    hero.velocity.x = 0
     sprite.play_flipbook(hero.sprite, hero.anim.IDLE)
 end
 
@@ -176,39 +198,48 @@ local function check_collisions()
     end
 end
 
-local function check_ground()
+local function update_bottom_position()
+    current_bottom_position = go.get_position()
+    current_bottom_position.y = (current_bottom_position.y - hero.sprite_bound.y) 
+  return current_bottom_position.y
+end
+
+local function check_ground(TYPE)
+
     ray_intersection.x = ray_intersection_x
     ray_intersection.y = ray_intersection_y
-
+    tile_size_y  = manager.tile_size.h * ray_tile_y
+  
     -- If falling on platform
-    if ray_tile_id == manager.tile.FLOAT and hero.fsm:is("falling") and ray_side == 1 and (fall_start_position.y) > (manager.tile_size.h * ray_tile_y + platform_top_offset) and ground_check.FRONT == false then
+    if ray_tile_id == manager.tile.FLOAT and hero.fsm.current == "falling" and ray_side == 1 and fall_start_position.y > tile_size_y and ground_check[TYPE] == false and update_bottom_position() >  tile_size_y  then
         oneside_platform_contact = true
-        ground_check.FRONT = true
-        hero.position.y = manager.tile_size.h * ray_tile_y + hero.sprite_bound.y
+        ground_check[TYPE] = true
+        hero.position.y = tile_size_y + hero.sprite_bound.y
+
         hero.fsm:idle()
     end
 
     -- If on platform
     if ray_tile_id == manager.tile.FLOAT and ray_side == 1 and oneside_platform_contact == true then
-        ground_check.FRONT = true
+        ground_check[TYPE] = true
     else
         oneside_platform_contact = false
     end
 
-    if ray_tile_id == manager.tile.WALL and ray_side == 1 and ground_check.FRONT == false then
-        ground_check.FRONT = true
-        hero.position.y = manager.tile_size.h * ray_tile_y + hero.sprite_bound.y
+    if ray_tile_id == manager.tile.WALL and ray_side == 1 and ground_check[TYPE] == false then
+        ground_check[TYPE] = true
+        hero.position.y = tile_size_y + hero.sprite_bound.y
         hero.fsm:idle()
     end
 
-    if ray_tile_id == manager.tile.WALL and ray_side == 0 and ground_check.FRONT == false then
+    if ray_tile_id == manager.tile.WALL and ray_side == 0 and ground_check[TYPE] == false then
         hero.velocity.x = 0
-        -- hero.position.x = manager.tile_size.w * ray_tile_x + hero.sprite_bound.x
     end
 
-    if ray_tile_id == manager.tile.PLATFORM and hero.fsm:is("falling") and ray_side == 1 and (fall_start_position.y) > (manager.tile_size.h * ray_tile_y + platform_top_offset) and ground_check.FRONT == false then
-        ground_check.FRONT = true
-        hero.position.y = manager.tile_size.h * ray_tile_y + hero.sprite_bound.y
+    -- Falling on floating platform. No more needed.
+    if ray_tile_id == manager.tile.PLATFORM and hero.fsm:is("falling") and ray_side == 1 and (fall_start_position.y) > (tile_size_y) and ground_check[TYPE] == false then
+        ground_check[TYPE] = true
+        hero.position.y = tile_size_y + hero.sprite_bound.y
         hero.fsm:idle()
     end
 
@@ -232,7 +263,7 @@ function hero.update(self, dt)
     end
 
     if ground_check.BACK == false and ground_check.FRONT == false then
-       
+
         -- ON AIR Gravity
         hero.velocity.y = hero.velocity.y + GRAVITY * dt
         hero.velocity.y = utils.clamp(hero.velocity.y, -MAX_FALL_SPEED, MAX_FALL_SPEED)
@@ -247,7 +278,6 @@ function hero.update(self, dt)
 
     end
 
-    
     hero.position = hero.position + hero.velocity * dt
 
     update_rays()
@@ -256,12 +286,11 @@ function hero.update(self, dt)
     if manager.debug then
         utils.draw_rays(rays, ray_count)
     end
-  
 
     -- FRONT RAY 
     ray_hit, ray_tile_x, ray_tile_y, ray_array_id, ray_tile_id, ray_intersection_x, ray_intersection_y, ray_side = raycast.cast(rays[2].from, rays[2].to)
     if ray_hit then
-        check_ground()
+        check_ground("FRONT")
     else
         ground_check.FRONT = false
     end
@@ -269,7 +298,7 @@ function hero.update(self, dt)
     -- BACK RAY 
     ray_hit, ray_tile_x, ray_tile_y, ray_array_id, ray_tile_id, ray_intersection_x, ray_intersection_y, ray_side = raycast.cast(rays[1].from, rays[1].to)
     if ray_hit then
-        check_ground()
+        check_ground("BACK")
     else
         ground_check.BACK = false
     end
@@ -289,20 +318,20 @@ function hero.update(self, dt)
     -- WALL RAY 
     ray_hit, ray_tile_x, ray_tile_y, ray_array_id, ray_tile_id, ray_intersection_x, ray_intersection_y, ray_side = raycast.cast(rays[3].from, rays[3].to)
     if ray_hit then
+
         ray_intersection.x = ray_intersection_x
         ray_intersection.y = ray_intersection_y
 
         if ray_tile_id == manager.tile.WALL then
-          --  pprint(hero.velocity.x)
-          if hero.fsm.current == "falling"  then
-            hero.velocity.x = (-20*hero.direction)
-          end
-          
-            if hero.fsm.current == "walking"  then
-                hero.velocity.x = 0
-             --   hero.position.x = (manager.tile_size.w * (ray_tile_x - (hero.direction == -1 and 0 or 1))) - hero.sprite_bound.x * hero.direction
+
+            if hero.fsm.current == "falling" then
+                hero.velocity.x = (-20 * hero.direction)
             end
-            
+
+            if hero.fsm.current == "walking" then
+                hero.velocity.x = 0
+            end
+
             wall_contact = true
         end
 
@@ -322,15 +351,13 @@ function hero.update(self, dt)
         if ray_hit then
 
             if ray_tile_id == manager.tile.WALL then
-                -- hero.position.x = (manager.tile_size.w * (ray_tile_x - (hero.direction == -1 and 0 or 1))) - hero.sprite_bound.x * hero.direction
-                -- hero.velocity.x = 0
-                if hero.fsm.current == "falling" or   hero.fsm.current == "jumping" then
-                    hero.velocity.x = (-20*hero.direction)
+                if hero.fsm.current == "falling" or hero.fsm.current == "jumping" then
+                    hero.velocity.x = (-20 * hero.direction)
                 else
-                   hero.position.x = (manager.tile_size.w * (ray_tile_x - (hero.direction == -1 and 0 or 1))) - hero.sprite_bound.x * hero.direction
-               hero.velocity.x = 0
+                    --  hero.position.x = (manager.tile_size.w * (ray_tile_x - (hero.direction == -1 and 0 or 1))) - hero.sprite_bound.x * hero.direction
+                    hero.velocity.x = 0
                 end
-               
+
                 wall_contact = true
             end
         end
@@ -340,7 +367,61 @@ function hero.update(self, dt)
         end
     end
 
-   
+    -- Top Ray
+    ray_hit, ray_tile_x, ray_tile_y, ray_array_id, ray_tile_id, ray_intersection_x, ray_intersection_y, ray_side = raycast.cast(rays[5].from, rays[5].to)
+    if ray_hit then
+        ray_intersection.x = ray_intersection_x
+        ray_intersection.y = ray_intersection_y
+
+        if ray_hit then
+
+            if ray_tile_id == manager.tile.WALL and ray_side == 1 then
+                hero.velocity.y = -100
+            end
+        end
+
+        if manager.debug then
+            utils.draw_hit_point(ray_intersection)
+        end
+    end
+
+    -- Top Left
+    ray_hit, ray_tile_x, ray_tile_y, ray_array_id, ray_tile_id, ray_intersection_x, ray_intersection_y, ray_side = raycast.cast(rays[6].from, rays[6].to)
+    if ray_hit then
+        ray_intersection.x = ray_intersection_x
+        ray_intersection.y = ray_intersection_y
+
+        if ray_hit then
+
+            if ray_tile_id == manager.tile.WALL and ray_side == 1 then
+                hero.velocity.y = -100
+                hero.velocity.x = (-20 * hero.direction)
+            end
+        end
+
+        if manager.debug then
+            utils.draw_hit_point(ray_intersection)
+        end
+    end
+
+    -- Top Left
+    ray_hit, ray_tile_x, ray_tile_y, ray_array_id, ray_tile_id, ray_intersection_x, ray_intersection_y, ray_side = raycast.cast(rays[7].from, rays[7].to)
+    if ray_hit then
+        ray_intersection.x = ray_intersection_x
+        ray_intersection.y = ray_intersection_y
+
+        if ray_hit then
+
+            if ray_tile_id == manager.tile.WALL and ray_side == 1 then
+                hero.velocity.y = -100
+                hero.velocity.x = (-20 * hero.direction)
+            end
+        end
+
+        if manager.debug then
+            utils.draw_hit_point(ray_intersection)
+        end
+    end
 
     -- Set the new possition
     go.set_position(hero.position)
@@ -388,7 +469,9 @@ function hero.input(self, action_id, action)
         if action.pressed then
             hero.fsm:jump()
         elseif action.released then
-            if ground_check.BACK == false and ground_check.FRONT == false then
+
+            if hero.fsm.current == "jumping" then
+
                 hero.fsm:fall()
             end
         end

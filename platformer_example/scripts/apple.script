@@ -2,37 +2,33 @@ local manager = require("platformer_example.scripts.libs.manager")
 local utils = require("platformer_example.scripts.libs.utils")
 
 function init(self)
-	self.url = msg.url(".")
+    self.url = msg.url(".")
     self.position = go.get_position()
-	self.size_w = 14 
-	self.size_h = 14
-	self.sprite = msg.url("#sprite")
-	
+    self.size_w = 14
+    self.size_h = 14
+    self.sprite = msg.url("#sprite")
+
 end
 
-
---! Here for debug. Remove this
+-- ! Here for debug. Remove this
 function update(self, dt)
-	if manager.debug then
-		utils.draw_rect(self.position, self.size_w, self.size_h)
-	end
-  
+    if manager.debug then
+        utils.draw_rect(self.position, self.size_w, self.size_h)
+    end
+
 end
 
 local function apple_remove_complete(self)
-	
-
-	aabb.remove(manager.collision_group, self.aabb_id)
-	go.delete()
-
+    aabb.remove(manager.collision_group, self.aabb_id)
+    go.delete()
 end
 
 function on_message(self, message_id, message, sender)
     if message_id == hash("set_aabb") then
-      self.aabb_id =   aabb.insert(manager.collision_group, self.position.x, self.position.y, self.size_w, self.size_h)
-	  manager.add_apple(self.aabb_id, self.url, self.position)
-	elseif  message_id == hash("que_for_delete") then
-		go.animate(self.url , "position.y", go.PLAYBACK_ONCE_FORWARD, self.position.y+150, go.EASING_LINEAR, 0.5,0.1)
-		go.animate(self.sprite, "tint.w",go.PLAYBACK_ONCE_FORWARD, 0,  go.EASING_LINEAR, 0.4, 0.2,  apple_remove_complete)
+        self.aabb_id = aabb.insert(manager.collision_group, self.position.x, self.position.y, self.size_w, self.size_h)
+        manager.add_apple(self.aabb_id, self.url, self.position)
+    elseif message_id == hash("que_for_delete") then
+        go.animate(self.url, "position.y", go.PLAYBACK_ONCE_FORWARD, self.position.y + 150, go.EASING_LINEAR, 0.5, 0.1)
+        go.animate(self.sprite, "tint.w", go.PLAYBACK_ONCE_FORWARD, 0, go.EASING_LINEAR, 0.4, 0.2, apple_remove_complete)
     end
 end

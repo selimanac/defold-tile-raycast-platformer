@@ -57,7 +57,7 @@ instances {
   prototype: "/metrics/fps.go"
   position {
     x: 33.0
-    y: 60.0
+    y: 80.0
     z: 0.0
   }
   rotation {
