@@ -232,6 +232,7 @@ function hero.update(self, dt)
     end
 
     if ground_check.BACK == false and ground_check.FRONT == false then
+       
         -- ON AIR Gravity
         hero.velocity.y = hero.velocity.y + GRAVITY * dt
         hero.velocity.y = utils.clamp(hero.velocity.y, -MAX_FALL_SPEED, MAX_FALL_SPEED)
@@ -246,6 +247,7 @@ function hero.update(self, dt)
 
     end
 
+    
     hero.position = hero.position + hero.velocity * dt
 
     update_rays()
@@ -254,6 +256,7 @@ function hero.update(self, dt)
     if manager.debug then
         utils.draw_rays(rays, ray_count)
     end
+  
 
     -- FRONT RAY 
     ray_hit, ray_tile_x, ray_tile_y, ray_array_id, ray_tile_id, ray_intersection_x, ray_intersection_y, ray_side = raycast.cast(rays[2].from, rays[2].to)
@@ -290,7 +293,16 @@ function hero.update(self, dt)
         ray_intersection.y = ray_intersection_y
 
         if ray_tile_id == manager.tile.WALL then
-            hero.position.x = (manager.tile_size.w * (ray_tile_x - (hero.direction == -1 and 0 or 1))) - hero.sprite_bound.x * hero.direction
+          --  pprint(hero.velocity.x)
+          if hero.fsm.current == "falling"  then
+            hero.velocity.x = (-20*hero.direction)
+          end
+          
+            if hero.fsm.current == "walking"  then
+                hero.velocity.x = 0
+             --   hero.position.x = (manager.tile_size.w * (ray_tile_x - (hero.direction == -1 and 0 or 1))) - hero.sprite_bound.x * hero.direction
+            end
+            
             wall_contact = true
         end
 
@@ -310,8 +322,15 @@ function hero.update(self, dt)
         if ray_hit then
 
             if ray_tile_id == manager.tile.WALL then
-                hero.position.x = (manager.tile_size.w * (ray_tile_x - (hero.direction == -1 and 0 or 1))) - hero.sprite_bound.x * hero.direction
-                hero.velocity.x = 0
+                -- hero.position.x = (manager.tile_size.w * (ray_tile_x - (hero.direction == -1 and 0 or 1))) - hero.sprite_bound.x * hero.direction
+                -- hero.velocity.x = 0
+                if hero.fsm.current == "falling" or   hero.fsm.current == "jumping" then
+                    hero.velocity.x = (-20*hero.direction)
+                else
+                   hero.position.x = (manager.tile_size.w * (ray_tile_x - (hero.direction == -1 and 0 or 1))) - hero.sprite_bound.x * hero.direction
+               hero.velocity.x = 0
+                end
+               
                 wall_contact = true
             end
         end
@@ -320,6 +339,8 @@ function hero.update(self, dt)
             utils.draw_hit_point(ray_intersection)
         end
     end
+
+   
 
     -- Set the new possition
     go.set_position(hero.position)

@@ -54,10 +54,9 @@ function manager.init()
     -- Init Tile raycast
     raycast.init(manager.tile_size.w, manager.tile_size.h, tilemap_width, tilemap_height, raycast_tilemap, raycast_target_tiles)
 
-    if manager.debug == false then
-        go.delete("/fps")
-    end
-
+    -- FPS
+    go.set("/fps#fps", "show", manager.debug)
+      
 end
 
 return manager

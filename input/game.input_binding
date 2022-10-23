@@ -34,6 +34,14 @@ key_trigger {
   input: KEY_SPACE
   action: "jump"
 }
+key_trigger {
+  input: KEY_1
+  action: "toggle_profiler"
+}
+key_trigger {
+  input: KEY_2
+  action: "toggle_debug"
+}
 mouse_trigger {
   input: MOUSE_BUTTON_LEFT
   action: "touch"

@@ -69,6 +69,11 @@ instances {
   component_properties {
     id: "fps"
     properties {
+      id: "show"
+      value: "true"
+      type: PROPERTY_TYPE_BOOLEAN
+    }
+    properties {
       id: "color"
       value: "1.0, 1.0, 1.0, 1.0"
       type: PROPERTY_TYPE_VECTOR4
